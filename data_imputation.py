@@ -37,31 +37,36 @@ def statistical_imputation(df, imputed_value):
         
     return df1
 
-## Random Categorical Imputation ##        
-def random_imputation(df):
-    df1 = df.copy()
-    random_percentage = []
-    running_sum = 0
-    # check for column value, apply imputation if values is int64 or float
-    # get frequency and total frequency of series
-    for i in range(len(df1.columns)):
-        if df1[df1.columns[i]].dtype == 'object':
-            frequency = df1[df1.columns[i]].value_counts(dropna = True)
-            total_frequency = sum(frequency)          
-            # loop ove frequency and obtain individual percentage for values
 
-            for key in frequency.keys():
-                percentage = frequency[key] / total_frequency
-                running_sum += percentage
-                random_percentage.append((key, running_sum))          
-           
+# data imputation based on feature distribution
+def distributed_imputation(df, column):
+    frequency = df[column].value_counts(dropna = True)
+    total_frequency = sum(frequency)
+    # loop over frequency and obtain individual percentage for values
+    random_percentage = []
+    # represents probabilitis of each category within the column
+    # categories with higher probability will have higher count
+    running_sum = 0
+    # frequency is a dictionary containing the value counts
+    for key in frequency.keys():
+        percentage = frequency[key] / total_frequency
+        running_sum += percentage
+        random_percentage.append((key, running_sum))          
+
+    #null_rows = df[df[column].isna()][column]
+    for index in df.index:
+        # identify missing value
+        if str(df.loc[index][column]) == 'nan' or str(df.loc[index][column]) == 'NaT':
+            # generate random value for that loctaion
             random_value = random.random()
+            # random_percent contains category and its running sum
             for key, value in random_percentage:
                 if random_value < value:
-                    #import pdb; pdb.set_trace()
-                    df1[df1.columns[i]] = df1[df1.columns[i]].fillna(value = key)
+                    # if reandom value less than category running sum
+                    # impute data with value
+                    df.loc[index, column] = key
                     break
-    return df1
+
 
 def bianary_encoder(matrix):
     two_variables = {}
